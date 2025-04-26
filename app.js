@@ -18,13 +18,31 @@ const analyticsRoutes     = require("./routes/analytics");
 
 
 const app = express();
+const allowedOrigins = [
+  'https://rani-riwaaj-r2bm.vercel.app',       // production
+  'https://www.rani-riwaaj-r2bm.vercel.app',   // www fallback
+  'http://localhost:3000',                     // local dev
+];
 
 // === CORS ===
 // Allow your React front‑end at localhost:3000 to interact with this API
 app.use(
   cors({
-    origin: 'https://rani-riwaaj-r2bm.vercel.app/',
-    credentials: true,            // allow cookies
+    origin: (origin, cb) => {
+      // allow requests with no Origin (e.g. Postman, curl)
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error(`Origin ${origin} not allowed by CORS`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+    ],
+    maxAge: 86400,  // cache the pre-flight for 24 h
   })
 );
 
