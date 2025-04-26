@@ -23,7 +23,7 @@ const app = express();
 // Allow your React front‑end at localhost:3000 to interact with this API
 app.use(
   cors({
-    origin: 'http://localhost:3000',
+    origin: 'https://rani-riwaaj-r2bm.vercel.app/',
     credentials: true,            // allow cookies
   })
 );
