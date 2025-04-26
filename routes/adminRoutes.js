@@ -11,10 +11,6 @@ if (!SECRET_KEY) {
   throw new Error("Missing JWT_SECRET environment variable");
 }
 
-/**
- * POST /admin/login
- * Expects a JSON body with "username" and "password".
- */
 router.post('/login', async (req, res) => {
   try {
     // Connect to the database
@@ -44,28 +40,15 @@ router.post('/login', async (req, res) => {
 
     // Create a JWT that includes the admin's UID and role.
     const token = jwt.sign({ uid: user.uid, role: "admin" }, SECRET_KEY, {
-      expiresIn: "1d",
+      expiresIn: "1d", // token expires in 1 day
       algorithm: "HS256",
     });
 
-   // Example code in your /admin/login route (server-side)
-res.cookie("admin_jwt", token, {
-    httpOnly: true,
-    // For local development over HTTP, set secure to false.
-    secure: process.env.NODE_ENV === "production",
-    // Use 'lax' or 'none' (with secure) if cross-site cookies are necessary.
-    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-    // Optionally set the domain if needed.
-    // domain: ".phulkaribagh.com",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 1000, // 1 day in milliseconds
-  });
-
-    return res.json({ success: true });
+    // Instead of setting the cookie, return the token in JSON:
+    return res.json({ token });
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({ error: "Server error" });
   }
 });
-
 module.exports = router;
