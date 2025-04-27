@@ -23,7 +23,7 @@ const allowedOrigins = [
   'https://www.rani-riwaaj-r2bm.vercel.app',   // www fallback
   'http://localhost:3000',                     // local dev
   'https://www.raniriwaaj.com',       // production
-  'https://raniriwaaj.com',
+  'https://raniriwaaj.com',      // production
 ];
 
 // === CORS ===
