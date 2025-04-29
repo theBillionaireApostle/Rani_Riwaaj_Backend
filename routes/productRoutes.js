@@ -59,6 +59,17 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.get('/published', async (req, res) => {
+  try {
+    await dbConnect();
+    const products = await Product.find({ published: true });
+    return res.json(products);
+  } catch (err) {
+    console.error("Error fetching published products:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 /**
  * GET /api/products/:id
  * Fetch a single product by ID
