@@ -2,7 +2,18 @@
 const Category = require('../models/Category');
 const { uploadImage, deleteImage } = require('../config/cloudinary');
 
-// Helper to upload via buffer or base64
+/* ------------------------------------------------------------------ */
+/*  Utility                                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Uploads an image either from a multipart buffer (req.file.buffer)
+ * or from a Base64 string (req.body.imageBase64).
+ * @param {string}  imageBase64 – base64 string (without the data URI prefix)
+ * @param {Buffer}  fileBuffer  – buffer from multer
+ * @param {string}  folder      – Cloudinary folder name
+ * @returns {Promise<{ secure_url: string, public_id: string }>}
+ */
 async function handleUpload(imageBase64, fileBuffer, folder = 'categories') {
   if (fileBuffer) {
     return await uploadImage(fileBuffer, { folder });
@@ -14,8 +25,12 @@ async function handleUpload(imageBase64, fileBuffer, folder = 'categories') {
   throw new Error('No image data provided');
 }
 
-// Public: list all categories
-exports.listCategories = async (req, res) => {
+/* ------------------------------------------------------------------ */
+/*  PUBLIC ENDPOINTS                                                   */
+/* ------------------------------------------------------------------ */
+
+// GET /api/categories
+exports.listCategories = async (_req, res) => {
   try {
     const cats = await Category.find().sort('name');
     res.json(cats);
@@ -25,8 +40,23 @@ exports.listCategories = async (req, res) => {
   }
 };
 
-// Admin: create a category
-// Accepts either multipart file under `req.file` or base64 in `req.body.imageBase64`
+// GET /api/categories/:id
+exports.getCategory = async (req, res) => {
+  try {
+    const cat = await Category.findById(req.params.id);
+    if (!cat) return res.status(404).send('Category not found');
+    res.json(cat);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+};
+
+/* ------------------------------------------------------------------ */
+/*  ADMIN-ONLY ENDPOINTS                                               */
+/* ------------------------------------------------------------------ */
+
+// POST /api/categories
 exports.createCategory = async (req, res) => {
   try {
     const { name, slug, description, imageBase64, folder } = req.body;
@@ -34,30 +64,27 @@ exports.createCategory = async (req, res) => {
       return res.status(400).send('Image file or base64 data is required');
     }
 
-    // Upload image
+    // upload
     const result = await handleUpload(imageBase64, req.file?.buffer, folder);
 
-    // Create category
+    // create doc
     const cat = await Category.create({
       name,
       slug,
       description,
-      image: {
-        url: result.secure_url,
-        publicId: result.public_id,
-      },
+      image: { url: result.secure_url, publicId: result.public_id },
     });
 
     res.status(201).json(cat);
   } catch (err) {
     console.error(err);
-    if (err.code === 11000) return res.status(409).send('Slug or name already exists');
+    if (err.code === 11000)
+      return res.status(409).send('Slug or name already exists');
     res.status(500).send('Failed to create category');
   }
 };
 
-// Admin: update a category
-// Can replace image via multipart or base64
+// PATCH /api/categories/:id
 exports.updateCategory = async (req, res) => {
   try {
     const { imageBase64, folder } = req.body;
@@ -68,14 +95,16 @@ exports.updateCategory = async (req, res) => {
     const cat = await Category.findById(req.params.id);
     if (!cat) return res.status(404).send('Category not found');
 
-    // If image provided, delete old and upload new
+    // replace image if provided
     if (req.file || imageBase64) {
       await deleteImage(cat.image.publicId);
       const result = await handleUpload(imageBase64, req.file?.buffer, folder);
       updates.image = { url: result.secure_url, publicId: result.public_id };
     }
 
-    const updated = await Category.findByIdAndUpdate(req.params.id, updates, { new: true });
+    const updated = await Category.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+    });
     res.json(updated);
   } catch (err) {
     console.error(err);
@@ -83,15 +112,14 @@ exports.updateCategory = async (req, res) => {
   }
 };
 
-// Admin: delete a category (and its Cloudinary image)
+// DELETE /api/categories/:id
 exports.deleteCategory = async (req, res) => {
   try {
     const cat = await Category.findById(req.params.id);
     if (!cat) return res.status(404).send('Category not found');
 
-    // Delete Cloudinary image
-    await deleteImage(cat.image.publicId);
-    await cat.remove();
+    await deleteImage(cat.image.publicId); // remove from Cloudinary
+    await cat.remove(); // remove from MongoDB
 
     res.status(204).end();
   } catch (err) {
