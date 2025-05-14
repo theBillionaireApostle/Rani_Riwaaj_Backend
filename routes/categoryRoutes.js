@@ -3,27 +3,29 @@ const express = require('express');
 const multer  = require('multer');
 const {
   listCategories,
+  getCategory,
   createCategory,
   updateCategory,
   deleteCategory,
 } = require('../controllers/categoryController');
-const { requireAuth, requireAdmin } = require('../middlewares/auth');   // <-- add requireAuth
+const { requireAuth, requireAdmin } = require('../middlewares/auth');
 
 const router = express.Router();
-const upload = multer(); // in‑memory storage
+const upload = multer(); // in-memory storage
 
 /* ------------------------------------------------------------------ */
-/*  PUBLIC                                                            */
+/*  PUBLIC ROUTES                                                     */
 /* ------------------------------------------------------------------ */
-router.get('/', listCategories);
+router.get('/',     listCategories); // list all
+router.get('/:id',  getCategory);    // get one by ID
 
 /* ------------------------------------------------------------------ */
-/*  ADMIN‑ONLY                                                        */
+/*  ADMIN ROUTES (JWT + role check)                                   */
 /* ------------------------------------------------------------------ */
 router.post(
   '/',
-  requireAuth,            // ① verify JWT, attach req.user
-  requireAdmin,           // ② be sure the user is an admin
+  requireAuth,
+  requireAdmin,
   upload.single('image'),
   createCategory
 );
