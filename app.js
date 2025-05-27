@@ -14,6 +14,7 @@ const categoryRoutes      = require('./routes/categoryRoutes');
 const { logPageView }     = require("./middlewares/logger");
 const eventRoutes         = require("./routes/events");
 const analyticsRoutes     = require("./routes/analytics");
+const tagRoutes           = require("./routes/tagRoutes");
 
 
 
@@ -79,6 +80,9 @@ app.use("/api/analytics", analyticsRoutes);
 
 // === Mount admin‑only endpoints (e.g. login) ===
 app.use('/admin', adminRoutes);
+
+app.use("/api/tags", tagRoutes);
+
 
 // === Health check ===
 app.get('/', (req, res) => {
