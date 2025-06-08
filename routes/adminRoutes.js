@@ -62,7 +62,7 @@ res.cookie("admin_jwt", token, {
     maxAge: 60 * 60 * 24 * 1000, // 1 day in milliseconds
   });
 
-    return res.json({ success: true });
+    return res.json({ success: true, token }); 
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({ error: "Server error" });
